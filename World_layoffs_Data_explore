@@ -1,0 +1,68 @@
+-- Exploratory Data Analysis
+
+select * from layoffs_staging2;
+
+select MAX(total_laid_off) , MAX(percentage_laid_off) from layoffs_staging2;
+
+Select * from layoffs_staging2
+where percentage_laid_off=1
+order by total_laid_off DESC;
+
+Select company, SUM(total_laid_off) from layoffs_staging2
+GROUP  by company
+order by 2 DESC;
+
+Select MAX(`date`), MIN(`date`)
+from layoffs_staging2;
+
+Select industry, SUM(total_laid_off) from layoffs_staging2
+GROUP  by Industry
+order by 2 DESC;
+
+Select country, industry,SUM(total_laid_off) from layoffs_staging2
+GROUP  by Industry, country
+order by 3 DESC;
+
+Select country,SUM(total_laid_off) from layoffs_staging2
+GROUP  by country
+order by 2 DESC;
+
+Select YEAR(`date`),SUM(total_laid_off) from layoffs_staging2
+GROUP  by YEAR(`date`)
+order by 2 DESC;
+
+-- Rolling sum
+
+Select substring(`date`,1,7) as MONTH, sum(total_laid_off) as total
+from layoffs_staging2
+where substring(`date`,1,7) IS NOT NULL
+group by `MONTH`
+order by 1 DESC;
+
+WITH CTE AS(
+Select substring(`date`,1,7) as `MONTH`, sum(total_laid_off) as total
+from layoffs_staging2
+where substring(`date`,1,7) IS NOT NULL
+group by `MONTH`
+order by 1 DESC)
+
+select `MONTH`, total,sum(total) over (order by `MONTH`) as rolling_sum
+from CTE;
+
+Select company, YEAR(`date`), SUM(total_laid_off)
+from layoffs_staging2
+GROUP BY company, YEAR(`date`)
+order by 3 DESC;
+
+with CTE (Company,YEAR,Total) AS
+(
+Select company, YEAR(`date`), SUM(total_laid_off)
+from layoffs_staging2
+GROUP BY company, YEAR(`date`)
+order by 3 DESC),
+CTE1 as(
+Select *, DENSE_RANK() over(partition by `year` order by total DESC) as Ranking
+from CTE
+where `year` is not null)
+
+select * from CTE1 where ranking<=5
